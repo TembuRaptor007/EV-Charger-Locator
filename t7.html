@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EV Charger Map</title>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div id="map" style="height: 500px;"></div>
+    <div id="user-location"></div>
+    <script>
+        var map = L.map('map');
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
+            maxZoom: 18,
+        }).addTo(map);
+
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var lat = position.coords.latitude;
+            var lng = position.coords.longitude;
+            var myLatLng = [lat, lng];
+            L.marker(myLatLng).addTo(map);
+            map.setView(myLatLng, 13);
+            document.getElementById("user-location").innerHTML = "Your Location: " + lat + ", " + lng;
+            
+            var url = 'https://api.openchargemap.io/v3/poi/?output=json&latitude=' + lat + '&longitude=' + lng + '&distance=5&distanceunit=KM'+"?key=e98d8b66-25f0-4649-a30e-26df7e21a14f";
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    for (var i = 0; i < data.length; i++) {
+                        var chargerLatLng = [data[i].AddressInfo.Latitude, data[i].AddressInfo.Longitude];
+                        var marker = L.marker(chargerLatLng).addTo(map);
+                        var link = 'https://www.google.com/maps/dir/' + lat + ',' + lng + '/' + data[i].AddressInfo.Latitude + ',' + data[i].AddressInfo.Longitude;
+                        marker.bindPopup(data[i].AddressInfo.Title + '<br/><a href='+link+' target="_blank">Directions</a>'); // added this line to create a link to google map direction
+                    }
+                });
+        });
+    </script>
+</body>
+</html>
